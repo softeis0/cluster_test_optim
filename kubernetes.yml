@@ -1,0 +1,54 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: soilcnn-search-vargp-nobk
+spec:
+  template:
+    spec:
+      priorityClassName: research-low
+      containers:
+        - name: soilnet-docker
+          image: ls6-stud-registry.informatik.uni-wuerzburg.de/studrudolph/pytorch-cnn:0.0.2
+          workingDir: /home/stud/rudolph/soilcnn-Feb2022/
+          imagePullPolicy: "IfNotPresent"
+          env:
+            - name: LOGNAME
+              value: "studrudolph"
+            - name: USER
+              value: "studrudolph"
+            - name: OMP_NUM_THREADS
+              value: "2"
+          resources:
+            limits:
+              cpu: "16"
+              memory: "16Gi"
+            requests:
+              cpu: "16"
+              memory: "16Gi"
+          command: ["python3", "-u", "main.py"]
+          args: ['-m', '+experiment=search/vargp', 'vars=nobk']
+          volumeMounts:
+            - mountPath: "/home/stud/rudolph/soilnet-Feb2022/dataset/data/"
+              name: data
+            - mountPath: "/home/stud/rudolph/soilnet-Feb2022/sweep"
+              name: output
+      imagePullSecrets:
+        - name: lsx-registry
+      restartPolicy: "Never"
+      volumes:
+        - name: data
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20  # Not important for you, just copy along
+            user: studrudolph  # <namespace>
+            path: "/home/stud/rudolph/soilnet-Feb2022/dataset/data/" # The path you want to mount
+            secretRef: # The name of the secret for auth. Is always "ceph-secret"
+              name: ceph-secret
+        - name: output
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20  # Not important for you, just copy along
+            user: studrudolph  # <namespace>
+            path: "/home/stud/rudolph/soilnet-Feb2022/dataset/data/" # The path you want to mount
+            secretRef: # The name of the secret for auth. Is always "ceph-secret"
+              name: ceph-secret
